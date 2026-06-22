@@ -6,13 +6,14 @@ app = Flask(__name__)
 
 # --- CONFIGURATION DE LA BASE DE DONNÉES ---
 def init_db():
-    """Crée la table des tâches si elle n'existe pas déjà."""
+    """Crée la table des tâches avec une colonne pour le statut (0 = En cours, 1 = Fait)."""
     conn = sqlite3.connect('tasks.db')
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL
+            title TEXT NOT NULL,
+            status INTEGER DEFAULT 0
         )
     ''')
     conn.commit()
@@ -20,7 +21,6 @@ def init_db():
 
 
 # --- DESIGN DE L'INTERFACE (HTML/CSS) ---
-# Une page web propre pour afficher et ajouter des tâches
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -28,27 +28,60 @@ HTML_TEMPLATE = """
     <title>PFE - Gestionnaire de Tâches SecOps</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 40px; }
-        .container { max-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        h2 { color: #333; }
+        .container { max-width: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin: auto; }
+        .header-student { background-color: #007bff; color: white; padding: 10px; border-radius: 4px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        h2, h3 { color: #333; }
         input[type="text"] { width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
         input[type="submit"] { padding: 10px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
         ul { list-style-type: none; padding: 0; }
-        li { padding: 10px; background: #eee; margin-bottom: 5px; border-radius: 4px; }
+        li { padding: 10px; background: #eee; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-done { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; }
+        .done-task { background: #d4edda; color: #155724; text-decoration: line-through; }
+        .tables-container { display: flex; gap: 20px; margin-top: 20px; }
+        .table-column { flex: 1; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Ma Liste de Tâches Sécurisée</h2>
+        <!-- Partie Étudiant en haut de la page -->
+        <div class="header-student">
+            PFE Licence Cybersécurité | Réalisé par : SALMA ETTAMRI
+        </div>
+
+        <h2>Mon Gestionnaire de Tâches</h2>
+
+        <!-- Formulaire pour ajouter une tâche -->
         <form action="/add" method="POST">
             <input type="text" name="task_title" placeholder="Nouvelle tâche..." required>
             <input type="submit" value="Ajouter">
         </form>
-        <h3>Tâches en cours :</h3>
-        <ul>
-            {% for task in tasks %}
-                <li>{{ task[1] }}</li>
-            {% endfor %}
-        </ul>
+
+        <div class="tables-container">
+                       <!-- Tableau 1 : Tâches à faire -->
+            <div class="table-column">
+                <h3>Tâches en cours</h3>
+                <ul>
+                    {% for task in tasks_todo %}
+                        <li>
+                            {{ task[1] }}
+                            <a href="/done/{{ task[0] }}" class="btn-done">Done</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Tableau 2 : Tâches effectuées -->
+            <div class="table-column">
+                <h3>Tâches effectuées</h3>
+                <ul>
+                    {% for task in tasks_done %}
+                        <li class="done-task">
+                            {{ task[1] }} ✅
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
 </body>
 </html>
@@ -59,37 +92,48 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def index():
-    """Route principale : lit les tâches dans la base et les affiche."""
+    """Sépare les tâches en deux listes selon leur statut (0 ou 1)."""
     conn = sqlite3.connect('tasks.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM tasks")
-    all_tasks = cursor.fetchall()
-    conn.close()
 
-    # On envoie les tâches au modèle HTML pour l'affichage
-    return render_template_string(HTML_TEMPLATE, tasks=all_tasks)
+    # Récupérer les tâches "En cours" (status = 0)
+    cursor.execute("SELECT id, title FROM tasks WHERE status = 0")
+    tasks_todo = cursor.fetchall()
+
+    # Récupérer les tâches "Effectuées" (status = 1)
+    cursor.execute("SELECT id, title FROM tasks WHERE status = 1")
+    tasks_done = cursor.fetchall()
+
+    conn.close()
+    return render_template_string(HTML_TEMPLATE, tasks_todo=tasks_todo, tasks_done=tasks_done)
 
 
 @app.route('/add', methods=['POST'])
 def add_task():
-    """Route pour ajouter une nouvelle tâche."""
     title = request.form.get('task_title')
-
     if title:
         conn = sqlite3.connect('tasks.db')
         cursor = conn.cursor()
-
-        # SÉCURITÉ : Utilisation d'une requête préparée pour éviter les injections SQL
-        cursor.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
-
+        # Sécurité : Requête préparée pour éviter l'injection SQL
+        cursor.execute("INSERT INTO tasks (title, status) VALUES (?, 0)", (title,))
         conn.commit()
         conn.close()
+    return redirect(url_for('index'))
 
+
+@app.route('/done/<int:task_id>')
+def complete_task(task_id):
+    """Met à jour le statut d'une tâche à 1 (Effectuée) de manière sécurisée."""
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+    # Sécurité : Utilisation de paramètre pour éviter l'injection SQL
+    cursor.execute("UPDATE tasks SET status = 1 WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
     return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
-    # Initialise la base de données au démarrage
     init_db()
-    # Lance l'application sur le port 5000
     app.run(host='0.0.0.0', port=5000)
+
