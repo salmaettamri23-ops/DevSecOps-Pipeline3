@@ -36,7 +36,8 @@ HTML_TEMPLATE = """
         ul { list-style-type: none; padding: 0; }
         li { padding: 10px; background: #eee; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .btn-done { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; }
-        .done-task { background: #d4edda; color: #155724; text-decoration: line-through; }
+        .btn-undone { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; }
+        .done-task { background: #d4edda; color: #155724; }
         .tables-container { display: flex; gap: 20px; margin-top: 20px; }
         .table-column { flex: 1; }
     </style>
@@ -57,7 +58,7 @@ HTML_TEMPLATE = """
         </form>
 
         <div class="tables-container">
-                       <!-- Tableau 1 : Tâches à faire -->
+            <!-- Tableau 1 : Tâches en cours -->
             <div class="table-column">
                 <h3>Tâches en cours</h3>
                 <ul>
@@ -76,7 +77,8 @@ HTML_TEMPLATE = """
                 <ul>
                     {% for task in tasks_done %}
                         <li class="done-task">
-                            {{ task[1] }} ✅
+                            <span>{{ task[1] }} ✅</span>
+                            <a href="/undone/{{ task[0] }}" class="btn-undone">Undone</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -96,11 +98,11 @@ def index():
     conn = sqlite3.connect('tasks.db')
     cursor = conn.cursor()
 
-    # Récupérer les tâches "En cours" (status = 0)
+    # Récupérer l'ID et le titre des tâches "En cours" (status = 0)
     cursor.execute("SELECT id, title FROM tasks WHERE status = 0")
     tasks_todo = cursor.fetchall()
 
-    # Récupérer les tâches "Effectuées" (status = 1)
+    # Récupérer l'ID et le titre des tâches "Effectuées" (status = 1)
     cursor.execute("SELECT id, title FROM tasks WHERE status = 1")
     tasks_done = cursor.fetchall()
 
@@ -133,7 +135,20 @@ def complete_task(task_id):
     return redirect(url_for('index'))
 
 
+@app.route('/undone/<int:task_id>')
+def undo_task(task_id):
+    """Remet le statut d'une tâche à 0 (En cours) de manière sécurisée."""
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+    # Sécurité : Utilisation de paramètre pour éviter l'injection SQL
+    cursor.execute("UPDATE tasks SET status = 0 WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     init_db()
     app.run(host='0.0.0.0', port=5000)
+
 
