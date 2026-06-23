@@ -51,6 +51,9 @@ pipeline {
                 // Le robot ZAP Docker attaque l'application locale sur le port 5000
                 sh 'docker run --rm -v $(pwd):/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:5000 -r rapport_zap.html || true'
 
+                // 2. MAJ : ON AJOUTE CETTE LIGNE POUR DÉVERROUILLER LE FICHIER
+                sh 'sudo chmod 777 rapport_zap.html || true'
+
                 // Cette commande demande à Jenkins d'afficher le rapport HTML sur votre écran
                 publishHTML([
                     allowMissing: true,
