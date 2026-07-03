@@ -1,11 +1,15 @@
 pipeline {
-    // Étape générale : orchestration globale sur n'importe quel agent disponible
     agent any
+
+    // Cette section indique à Jenkins de charger automatiquement Node.js et npm
+    tools {
+        nodejs 'NodeJS' // 'NodeJS' doit correspondre au nom configuré dans vos outils Jenkins
+    }
 
     environment {
         IMAGE_NAME = "mon-app-devsecops:latest"
         CONTAINER_NAME = "app-staging-test"
-        SONAR_SERVER_NAME = "SonarQube-Server" // Nom du serveur configuré dans Jenkins
+        SONAR_SERVER_NAME = "SonarQube-Server"
     }
 
     stages {
@@ -30,7 +34,6 @@ pipeline {
         // ==========================================
         stage('Phase Securite - Analyse Statique') {
             steps {
-                // On regroupe les 3 analyses en parallèle ou à la suite comme sur le schéma
                 echo "Etape 4 - SAST : Analyse du code source avec SonarQube..."
                 withSonarQubeEnv("${SONAR_SERVER_NAME}") {
                     sh 'sonar-scanner'
@@ -53,7 +56,6 @@ pipeline {
                 sh "docker build -t ${IMAGE_NAME} ."
 
                 echo "Etape 8 - Container Scan : Scan des CVE de l'image avec Trivy..."
-                // Le flag --exit-code 1 permet de bloquer le pipeline en cas de faille critique (Security Gate)
                 sh "trivy image --exit-code 1 --severity CRITICAL ${IMAGE_NAME}"
             }
         }
@@ -64,19 +66,15 @@ pipeline {
         stage('Phase Deploiement et Tests Dynamiques') {
             steps {
                 echo "Etape 9 - Deploy Staging : Déploiement dans l'environnement de test..."
-                // Nettoyage d'un ancien conteneur de test s'il existe
                 sh "docker rm -f ${CONTAINER_NAME} || true"
-                // Lancement du nouveau conteneur sur le port d'écoute de l'app (ex: 3000)
                 sh "docker run -d -p 3000:3000 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
-                sh "sleep 10" // Temps d'attente pour que l'application démarre proprement
+                sh "sleep 10"
 
                 echo "Etape 10 - DAST : Tests dynamiques avec OWASP ZAP..."
                 script {
                     try {
-                        // On lance le scan DAST contre l'environnement de Staging fraîchement déployé
                         sh "zap-baseline.py -t http://localhost:3000"
                     } finally {
-                        // Nettoyage automatique indispensable du conteneur de staging après les tests
                         echo "Nettoyage de l'environnement de Staging..."
                         sh "docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}"
                     }
@@ -89,7 +87,6 @@ pipeline {
         // ==========================================
         stage('Validation Manuelle Production ?') {
             steps {
-                // Interruption visuelle dans Jenkins pour approbation humaine
                 input message: "Voulez-vous approuver le déploiement en Production ?", ok: "Approuver"
             }
         }
@@ -97,7 +94,6 @@ pipeline {
         stage('Etape 11 - Deploy Production') {
             steps {
                 echo "Application approuvée ! Déploiement final en Production avec succès."
-                // Exemple de commande finale : sh "docker run -d -p 80:3000 --name app-prod ${IMAGE_NAME}"
             }
         }
     }
@@ -114,4 +110,3 @@ pipeline {
         }
     }
 }
-
