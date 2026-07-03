@@ -79,16 +79,14 @@ pipeline {
             }
         }
 
-        stage('Etape 10 - DAST (OWASP ZAP)') {
+     stage('Etape 10 - DAST (OWASP ZAP)') {
             steps {
-                echo "Lancement des attaques dynamiques sur l'application en cours d'exécution..."
-                try {
-                    sh 'python test_dast.py'
-                } finally {
-                    // Cette partie s'exécute TOUJOURS pour nettoyer le serveur Jenkins,
-                    // même si le test DAST échoue et bloque le pipeline.
-                    echo "Nettoyage du conteneur de Staging..."
-                    sh "docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}"
+                script {
+                    try {
+                        sh 'python test_dast.py'
+                    } finally {
+                        sh "docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}"
+                    }
                 }
             }
         }
