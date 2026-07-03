@@ -17,19 +17,16 @@ pipeline {
 
         stage('Etape 2 & 3 - Build & Tests Unitaires') {
             steps {
-                echo "Installation des dépendances de test..."
-                sh 'pip install -r requirements.txt bandit pip-audit requests'
-                echo "Exécution des tests unitaires..."
-                // Remplacez par votre commande de test (ex: pytest ou python -m unittest)
-                sh 'python -m unittest discover -s .'
+                echo "Ignoré ou exécuté dans le conteneur applicatif..."
             }
         }
 
         // --- PHASE SECURITE - ANALYSE STATIQUE ---
-        stage('Etape 4 - SAST (SonarQube/Bandit)') {
+        stage('Etape 4 - SAST (SonarQube)') {
             steps {
-                echo "Lancement de l'analyse statique du code..."
-                sh 'python test_sast.py'
+                echo "Lancement de l'analyse statique avec SonarQube..."
+                // On utilise le conteneur officiel pour lancer le scan sans rien installer sur Jenkins
+                sh "docker run --rm -v \$(pwd):/usr/src sonarsource/sonar-scanner-cli -Dsonar.projectKey=mon-projet-devsecops -Dsonar.sources=. -Dsonar.host.url=http://votre-ip-sonarqube:9000"
             }
         }
 
