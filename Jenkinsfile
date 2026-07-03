@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    // On indique à Jenkins d'utiliser l'image officielle Python pour exécuter le pipeline
+    agent {
+        docker {
+            image 'python:3.11-slim'
+        }
+    }
 
     stages {
         stage('Etape 1 - Checkout') {
@@ -10,16 +15,15 @@ pipeline {
 
         stage('Etape 2 & 3 - Build & Tests') {
             steps {
-                echo "Préparation de l'environnement..."
-                // Utilise python directement au lieu de docker
-                sh 'pip install --user -r requirements.txt pip-audit requests bandit'
+                echo "Préparation de l'environnement avec Pip..."
+                // Maintenant que Jenkins utilise l'image Python, pip est disponible !
+                sh 'pip install -r requirements.txt pip-audit requests bandit'
             }
         }
 
         stage('Etape 4 - SAST (Alternative légère)') {
             steps {
                 echo "Lancement de l'analyse statique du code..."
-                // Si SonarQube bloque à cause de Docker, Bandit prend le relais directement en Python
                 sh 'python -m bandit -r app.py'
             }
         }
@@ -40,7 +44,6 @@ pipeline {
         stage('Etape 7, 8 & 9 - Simulation Staging') {
             steps {
                 echo "Validation de la structure de l'application..."
-                // On vérifie que le script python se lance correctement
                 sh 'python -m py_compile app.py'
             }
         }
