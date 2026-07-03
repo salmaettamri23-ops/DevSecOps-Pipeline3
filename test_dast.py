@@ -10,15 +10,15 @@ def test_security_routes():
     payload = "<script>alert('hack')</script>"
 
     try:
-        # Envoi d'une requête test pour voir si l'application est vulnérable au XSS
+        # Tout ce bloc doit être aligné avec 8 espaces de décalage
         response = requests.get(f"{BASE_URL}/", params={"q": payload})
         if payload in response.text:
             print("[ALERTE] Faille de sécurité potentielle détectée !")
             return False
-        print("[SUCCÈS] L'application réagit correctement aux attaques de test.")
+        print("[SUCCÈS] L'application réagit correctement aux attaques.")
         return True
     except requests.exceptions.ConnectionError:
-        print(f"[ERREUR] Impossible de contacter l'application sur {BASE_URL}. Vérifiez qu'elle a démarré.")
+        print(f"[ERREUR] Impossible de contacter l'application.")
         return False
 
 
