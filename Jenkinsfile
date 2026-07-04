@@ -23,22 +23,15 @@ pipeline {
         // --- PHASE SÉCURITÉ - ANALYSE STATIQUE (En parallèle) ---
         stage('Phase Securite - Analyse Statique') {
             parallel {
-                stage('Etape 4 - SAST') {
-                    environment {
-                        SONAR_CREDENTIAL = credentials('SONAR_TOKEN')
-                    }
+                 stage('Etape 4 - SAST') {
                     steps {
-                        echo "Etape 4 - SAST : Lancement de l'analyse réelle du code avec SonarScanner..."
-                        // Cette commande exécute le scanneur officiel via le réseau Docker commun
-                        sh """
-                        docker run --rm --network=devsecops-net \
-                        -v "${WORKSPACE}":/usr/src \
-                        sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=Projet_Pipeline \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://sonarqube:9000 \
-                        -Dsonar.login=${SONAR_CREDENTIAL}
-                        """
+                        echo "Etape 4 - SAST : Lancement de l'analyse réelle avec le plugin natif..."
+
+                        // Jenkins utilise l'outil configuré globalement et l'environnement du serveur
+                        withSonarQubeEnv('MySonarServer') {
+                            def scannerHome = tool 'MySonarScanner'
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Projet_Pipeline -Dsonar.sources=."
+                        }
                     }
                 }
                 stage('Etape 5 - SCA') {
