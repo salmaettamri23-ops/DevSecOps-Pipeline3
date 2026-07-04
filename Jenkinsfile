@@ -24,9 +24,21 @@ pipeline {
         stage('Phase Securite - Analyse Statique') {
             parallel {
                 stage('Etape 4 - SAST') {
+                    environment {
+                        SONAR_CREDENTIAL = credentials('SONAR_TOKEN')
+                    }
                     steps {
-                        echo 'Etape 4 - SAST : Analyse du code source avec SonarQube...'
-                        echo '[SUCCESS] Aucun problème majeur détecté dans le code source.'
+                        echo "Etape 4 - SAST : Lancement de l'analyse réelle du code avec SonarScanner..."
+                        // Cette commande exécute le scanneur officiel via le réseau Docker commun
+                        sh """
+                        docker run --rm --network=devsecops-net \
+                        -v "${WORKSPACE}":/usr/src \
+                        sonarsource/sonar-scanner-cli \
+                        -Dsonar.projectKey=Projet_Pipeline \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://sonarqube:9000 \
+                        -Dsonar.login=${SONAR_CREDENTIAL}
+                        """
                     }
                 }
                 stage('Etape 5 - SCA') {
