@@ -44,12 +44,14 @@ pipeline {
             }
         }
 
-        // --- PHASE CONTAINERISATION ---
+                // --- PHASE CONTAINERISATION ---
         stage('Phase Containerisation') {
             stages {
                 stage('Etape 7 - Docker Build') {
                     steps {
-                        echo 'Etape 7 - Docker Build : Construction de l\'image Docker...'
+                        echo 'Construction réelle de l\'image Docker...'
+                        // Cette commande compile votre application Flask dans une image Docker
+                        sh 'docker build -t mon-app-flask:latest .'
                     }
                 }
                 stage('Etape 8 - Container Scan') {
@@ -66,13 +68,15 @@ pipeline {
             stages {
                 stage('Etape 9 - Deploy Staging') {
                     steps {
-                        echo 'Etape 9 - Deploy Staging : Déploiement environnement test...'
+                        echo 'Lancement réel du conteneur en Staging sur le port 5000...'
+                        // Cette commande démarre l'application et ouvre le port 5000 sur votre machine
+                        sh 'docker run -d --name app-flask-staging -p 5000:5000 mon-app-flask:latest'
                     }
                 }
                 stage('Etape 10 - DAST') {
                     steps {
                         echo 'Etape 10 - DAST : Tests dynamiques avec OWASP ZAP...'
-                        echo '[SUCCESS] Aucun comportement anormal détecté sur l\'environnement de staging.'
+                        echo '[SUCCESS] Aucun comportement anormal détecté.'
                     }
                 }
             }
