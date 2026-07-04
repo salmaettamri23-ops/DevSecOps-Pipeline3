@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        // --- PHASE BUILD ET TESTS ---
+        // --- PHASE BUILD ET TESTS (Étapes 1, 2, 3) ---
         stage('Phase Build et Tests') {
             stages {
                 stage('Etape 1 - Checkout') {
@@ -20,17 +20,17 @@ pipeline {
             }
         }
 
-        // --- PHASE SÉCURITÉ - ANALYSE STATIQUE (En parallèle) ---
+        // --- PHASE SÉCURITÉ - ANALYSE STATIQUE (Étapes 4, 5, 6) ---
         stage('Phase Securite - Analyse Statique') {
             parallel {
-                 stage('Etape 4 - SAST') {
+                stage('Etape 4 - SAST') {
                     steps {
                         echo "Etape 4 - SAST : Lancement de l'analyse réelle avec le plugin natif..."
-
-                        // Jenkins utilise l'outil configuré globalement et l'environnement du serveur
-                        withSonarQubeEnv('MySonarServer') {
-                            def scannerHome = tool 'MySonarScanner'
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Projet_Pipeline -Dsonar.sources=."
+                        script {
+                            withSonarQubeEnv('MySonarServer') {
+                                def scannerHome = tool 'MySonarScanner'
+                                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Projet_Pipeline -Dsonar.sources=."
+                            }
                         }
                     }
                 }
@@ -49,7 +49,7 @@ pipeline {
             }
         }
 
-        // --- PHASE CONTAINERISATION ---
+        // --- PHASE CONTAINERISATION (Étapes 7, 8) ---
         stage('Phase Containerisation') {
             stages {
                 stage('Etape 7 - Docker Build') {
@@ -67,7 +67,7 @@ pipeline {
             }
         }
 
-        // --- PHASE DÉPLOIEMENT ET TESTS DYNAMIQUES ---
+        // --- PHASE DÉPLOIEMENT ET TESTS DYNAMIQUES (Étapes 9, 10) ---
         stage('Phase Deploiement et Tests Dynamiques') {
             stages {
                 stage('Etape 9 - Deploy Staging') {
@@ -85,7 +85,7 @@ pipeline {
             }
         }
 
-        // --- VALIDATION MANUELLE PRODUCTION ---
+        // --- SECURITY GATE ET DÉCISION MANUELLE ---
         stage('Validation Manuelle Production ?') {
             steps {
                 script {
@@ -95,7 +95,7 @@ pipeline {
             }
         }
 
-        // --- DÉPLOIEMENT FINAL ---
+        // --- DÉPLOIEMENT FINAL (Étape 11) ---
         stage('Etape 11 - Deploy Production') {
             steps {
                 echo 'Etape 11 - Deploy Production : Application Flask déployée avec succès en Production !'
