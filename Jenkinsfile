@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    // CORRECTION : Force Jenkins à charger l'outil Docker disponible sur le système
+    tools {
+        docker 'Default'
+    }
+
     triggers {
         pollSCM('H/2 * * * *')
     }
@@ -9,10 +14,9 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                // Votre lien Git est configuré ici de manière définitive
                 git branch: 'master',
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
+                    url: 'https://github.com'
             }
         }
 
