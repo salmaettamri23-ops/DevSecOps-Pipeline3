@@ -9,7 +9,7 @@ pipeline {
             steps {
                 git branch: 'main', // mettez 'master' ou 'main' selon votre branche
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com'
+                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
             }
         }
 
