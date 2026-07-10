@@ -15,27 +15,29 @@ pipeline {
             }
         }
 
-             stage('Install') {
+          stage('Install') {
             steps {
-                // CORRECTION : Installation des dépendances sans environnement virtuel, en mode utilisateur
+                // CORRECTION : Forçage de l'installation avec --break-system-packages pour contourner PEP 668
                 sh '''
-                    python3 -m pip install --user --upgrade pip
+                    python3 -m pip install --user --upgrade pip --break-system-packages || true
                     if [ -f requirements.txt ]; then
-                        python3 -m pip install --user -r requirements.txt
+                        python3 -m pip install --user -r requirements.txt --break-system-packages
                     fi
-                    python3 -m pip install --user pytest
+                    python3 -m pip install --user pytest --break-system-packages
                 '''
             }
         }
 
         stage('Tests') {
             steps {
-                // CORRECTION : Exécution de pytest directement via le module python3
+                // Exécution des tests Python
                 sh '''
                     python3 -m pytest || echo "Certains tests ont échoué, mais on continue le pipeline"
                 '''
             }
         }
+
+
 
 
         stage('SAST - SonarQube') {
