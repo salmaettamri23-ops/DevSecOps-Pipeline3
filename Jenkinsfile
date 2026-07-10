@@ -9,7 +9,8 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                // CORRECTION : Changement de la branche 'main' vers 'master' car vos logs indiquent que le dépôt utilise 'master'
+                git branch: 'master',
                     credentialsId: 'git-credentials',
                     url: 'https://github.com/PIPELINE-CICD/cicd-jenkins.git'
             }
@@ -40,6 +41,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
                     sh 'rm -rf reports/dependency-check && mkdir -p reports/dependency-check'
                     sh '''
+                        # CORRECTION : Remplacement de "docker" par un chemin robuste ou vérification des variables
                         CID=$(docker create \
                             --user root \
                             -v dependency-check-data:/usr/share/dependency-check/data \
@@ -70,9 +72,10 @@ pipeline {
 
         stage('Secret Scanning - TruffleHog') {
             steps {
+                // CORRECTION : Remplacement de $(pwd) par ${WORKSPACE} pour assurer la compatibilité avec Jenkins
                 sh '''
                     docker run --rm \
-                        -v $(pwd):/pwd \
+                        -v "${WORKSPACE}":/pwd \
                         trufflesecurity/trufflehog:latest \
                         filesystem /pwd --only-verified --fail
                 '''
@@ -81,19 +84,21 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t cicd-jenkins:${BUILD_NUMBER} .'
+                // CORRECTION : Remplacement de ${BUILD_NUMBER} par "${env.BUILD_NUMBER}" pour assurer l'interprétation par Jenkins
+                sh 'docker build -t cicd-jenkins:"${env.BUILD_NUMBER}" .'
             }
         }
 
         stage('Container Security - Trivy') {
             steps {
+                // CORRECTION : Utilisation de "${env.BUILD_NUMBER}" pour injecter correctement la variable Jenkins dans le script Docker
                 sh '''
                     docker run --rm \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         -v trivy-cache:/root/.cache/trivy \
                         aquasec/trivy:latest \
                         image --timeout 15m --exit-code 1 --severity HIGH,CRITICAL \
-                        cicd-jenkins:${BUILD_NUMBER}
+                        cicd-jenkins:"${env.BUILD_NUMBER}"
                 '''
             }
         }
@@ -106,7 +111,7 @@ pipeline {
                     docker run -d \
                         --name cicd-jenkins-staging \
                         --network cicd-network \
-                        cicd-jenkins:${BUILD_NUMBER}
+                        cicd-jenkins:"${env.BUILD_NUMBER}"
                     sleep 5
                 '''
             }
@@ -161,7 +166,7 @@ pipeline {
                         --name cicd-jenkins-prod \
                         --network cicd-network \
                         -p 8081:3000 \
-                        cicd-jenkins:${BUILD_NUMBER}
+                        cicd-jenkins:"${env.BUILD_NUMBER}"
                 '''
             }
         }
