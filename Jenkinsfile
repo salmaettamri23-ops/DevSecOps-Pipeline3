@@ -1,7 +1,6 @@
 pipeline {
     agent any
 
-<<<<<<< HEAD
     stages {
         stage('1. Recuperation du Code') {
             steps {
@@ -71,7 +70,7 @@ pipeline {
         }
     }
 }
-=======
+
     environment {
         // CORRECTION WINDOWS : Permet à Jenkins de piloter Docker Desktop sans erreur 'not found'
         DOCKER_HOST = 'tcp://host.docker.internal:2375'
