@@ -1,9 +1,7 @@
 pipeline {
-    agent any
-
-    // CORRECTION : Force Jenkins à charger l'outil Docker disponible sur le système
-    tools {
-        docker 'Default'
+    // MÉTHODE UNIVERSELLE : Indique nativement à Jenkins d'activer Docker pour tout le pipeline
+    agent {
+        docker any
     }
 
     triggers {
@@ -16,7 +14,7 @@ pipeline {
             steps {
                 git branch: 'master',
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com'
+                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
             }
         }
 
