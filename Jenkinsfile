@@ -17,7 +17,7 @@ pipeline {
                 // Étape d'origine conservée avec votre lien et votre branche master
                 git branch: 'master',
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com'
+                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
             }
         }
 
