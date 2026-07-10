@@ -15,28 +15,28 @@ pipeline {
             }
         }
 
-        stage('Install') {
+             stage('Install') {
             steps {
-                // CORRECTION PYTHON : Création d'un environnement virtuel et installation des dépendances
+                // CORRECTION : Installation des dépendances sans environnement virtuel, en mode utilisateur
                 sh '''
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip
-                    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-                    pip install pytest  # Assure que l'outil de test est présent
+                    python3 -m pip install --user --upgrade pip
+                    if [ -f requirements.txt ]; then
+                        python3 -m pip install --user -r requirements.txt
+                    fi
+                    python3 -m pip install --user pytest
                 '''
             }
         }
 
         stage('Tests') {
             steps {
-                // CORRECTION PYTHON : Exécution des tests Python avec pytest
+                // CORRECTION : Exécution de pytest directement via le module python3
                 sh '''
-                    . .venv/bin/activate
-                    pytest || echo "Certains tests ont échoué, mais on continue le pipeline"
+                    python3 -m pytest || echo "Certains tests ont échoué, mais on continue le pipeline"
                 '''
             }
         }
+
 
         stage('SAST - SonarQube') {
             steps {
