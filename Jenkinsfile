@@ -9,15 +9,16 @@ pipeline {
 
         stage('Checkout') {
             steps {
+                // Utilise la bonne branche 'master' détectée dans vos logs et l'ID git-credentials configuré
                 git branch: 'master',
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
+                    url: 'https://github.com'
             }
         }
 
-          stage('Install') {
+        stage('Install') {
             steps {
-                // CORRECTION : Forçage de l'installation avec --break-system-packages pour contourner PEP 668
+                // Installation robuste des dépendances Python en mode utilisateur avec forçage PEP 668
                 sh '''
                     python3 -m pip install --user --upgrade pip --break-system-packages || true
                     if [ -f requirements.txt ]; then
@@ -30,21 +31,24 @@ pipeline {
 
         stage('Tests') {
             steps {
-                // Exécution des tests Python
+                // Exécution des tests via le module Python 3
                 sh '''
                     python3 -m pytest || echo "Certains tests ont échoué, mais on continue le pipeline"
                 '''
             }
         }
 
-
-
-
         stage('SAST - SonarQube') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    // Adapté pour scanner du Python via le binaire sonar-scanner classique si installé sur Jenkins
-                    sh 'sonar-scanner'
+                // CORRECTION : Utilisation de l'image Docker officielle pour s'affranchir du plugin Jenkins manquant
+                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        docker run --rm \
+                            -v "${WORKSPACE}":/usr/src \
+                            sonarsource/sonar-scanner-cli:latest \
+                            -Dsonar.token=$SONAR_TOKEN \
+                            -Dsonar.host.url="http://192.168.1.100:9000"
+                    '''
                 }
             }
         }
