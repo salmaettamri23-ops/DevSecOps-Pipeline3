@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+ // AJOUTER CE BLOC POUR REGLER LE DOCKER NOT FOUND SUR WINDOWS/LINUX
+    environment {
+        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
+    }
+
     triggers {
         pollSCM('H/2 * * * *')
     }
