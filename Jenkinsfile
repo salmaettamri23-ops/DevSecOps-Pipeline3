@@ -1,8 +1,8 @@
 pipeline {
     agent any
 
- // AJOUTER CE BLOC POUR REGLER LE DOCKER NOT FOUND SUR WINDOWS/LINUX
     environment {
+        // Garantit que Jenkins trouve les commandes du système
         PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
     }
 
@@ -14,17 +14,15 @@ pipeline {
 
         stage('1. Recuperation du Code') {
             steps {
-                // Lien Git configuré manuellement de manière fixe
-                git branch: 'main',
-                    credentialsId: 'git-credentials',
-                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
+                // CORRECTION CRUCIALE : On utilise la commande automatique
+                // pour éviter le conflit master/main que l'on voit sur l'image
+                checkout scm
             }
         }
 
         stage('2. Scan de Securite du Code (SAST)') {
             steps {
                 echo "Lancement du scan de securite avec Bandit via Docker..."
-                // Utilisation de l'image Docker de Bandit pour contourner le "pip: not found"
                 sh 'docker run --rm -v "${WORKSPACE}":/apps opensecurity/bandit -r /apps -f json -o /apps/bandit-report.json || true'
             }
         }
@@ -32,7 +30,6 @@ pipeline {
         stage('3. Analyse des Dependances (SCA)') {
             steps {
                 echo "Analyse du fichier requirements.txt avec Trivy..."
-                // Utilisation de l'image Docker Trivy pour contourner le "trivy: not found"
                 sh 'docker run --rm -v "${WORKSPACE}":/apps aquasec/trivy:latest fs /apps/requirements.txt || true'
             }
         }
@@ -40,7 +37,6 @@ pipeline {
         stage('4. Construction de l\'image Docker') {
             steps {
                 echo "Construction de l\'image de l\'application..."
-                // Construit l'image sur le moteur Docker partagé de votre ordinateur
                 sh 'docker build -t mon-app-sec:latest .'
             }
         }
