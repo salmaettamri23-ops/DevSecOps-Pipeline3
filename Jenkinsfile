@@ -12,7 +12,7 @@ pipeline {
                 // CORRECTION : Changement de la branche 'main' vers 'master' car vos logs indiquent que le dépôt utilise 'master'
                 git branch: 'master',
                     credentialsId: 'git-credentials',
-                    url: 'https://github.com/PIPELINE-CICD/cicd-jenkins.git'
+                    url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
             }
         }
 
