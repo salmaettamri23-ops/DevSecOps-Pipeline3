@@ -9,7 +9,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                // Utilise la bonne branche 'master' détectée dans vos logs et l'ID git-credentials configuré
+                // Votre lien Git est configuré ici de manière définitive
                 git branch: 'master',
                     credentialsId: 'git-credentials',
                     url: 'https://github.com/salmaettamri23-ops/DevSecOps-Pipeline3.git'
@@ -18,7 +18,6 @@ pipeline {
 
         stage('Install') {
             steps {
-                // Installation robuste des dépendances Python en mode utilisateur avec forçage PEP 668
                 sh '''
                     python3 -m pip install --user --upgrade pip --break-system-packages || true
                     if [ -f requirements.txt ]; then
@@ -31,7 +30,6 @@ pipeline {
 
         stage('Tests') {
             steps {
-                // Exécution des tests via le module Python 3
                 sh '''
                     python3 -m pytest || echo "Certains tests ont échoué, mais on continue le pipeline"
                 '''
@@ -40,7 +38,6 @@ pipeline {
 
         stage('SAST - SonarQube') {
             steps {
-                // CORRECTION : Utilisation de l'image Docker officielle pour s'affranchir du plugin Jenkins manquant
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh '''
                         docker run --rm \
